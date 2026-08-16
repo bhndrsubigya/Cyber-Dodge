@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Dodge</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #05000a;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: #00ffff;
+            text-shadow: 0 0 15px #00ffff;
+        }
+
+        #game {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            max-width: 95vw;
+            margin: 20px auto;
+            background:
+                linear-gradient(rgba(0,255,255,.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,0,255,.05) 1px, transparent 1px),
+                #080010;
+            background-size: 30px 30px;
+            border: 2px solid #00ffff;
+            box-shadow: 0 0 25px #00ffff;
+            overflow: hidden;
+        }
+
+        #player {
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            bottom: 20px;
+            left: 177px;
+            background: #00ffff;
+            box-shadow: 0 0 20px #00ffff;
+        }
+
+        .enemy {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: #ff00ff;
+            box-shadow: 0 0 20px #ff00ff;
+        }
+
+        #score {
+            color: #00ffff;
+            font-size: 20px;
+        }
+
+        #gameOver {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,.8);
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        #gameOver h2 {
+            color: #ff00ff;
+            font-size: 40px;
+            text-shadow: 0 0 20px #ff00ff;
+        }
+
+        button {
+            padding: 12px 25px;
+            background: transparent;
+            color: #00ffff;
+            border: 2px solid #00ffff;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        button:hover {
+            background: #00ffff;
+            color: black;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>CYBER DODGE</h1>
+
+    <div id="score">Score: 0</div>
+
+    <div id="game">
+
+        <div id="player"></div>
+
+        <div id="gameOver">
+            <h2>GAME OVER</h2>
+            <p id="finalScore"></p>
+            <button onclick="restartGame()">PLAY AGAIN</button>
+        </div>
+
+    </div>
+
+    <p>Use ← → or A / D to move</p>
+
+    <script>
+
+        const game = document.getElementById("game");
+        const player = document.getElementById("player");
+        const scoreText = document.getElementById("score");
+        const gameOverScreen = document.getElementById("gameOver");
+        const finalScore = document.getElementById("finalScore");
+
+        let playerX = 177;
+        let score = 0;
+        let gameRunning = true;
+        let enemies = [];
+
+        const keys = {};
+
+        document.addEventListener("keydown", function(event) {
+            keys[event.key.toLowerCase()] = true;
+        });
+
+        document.addEventListener("keyup", function(event) {
+            keys[event.key.toLowerCase()] = false;
+        });
+
+        function createEnemy() {
+
+            if (!gameRunning) return;
+
+            const enemy = document.createElement("div");
+
+            enemy.className = "enemy";
+
+            enemy.style.left =
+                Math.random() * (game.clientWidth - 40) + "px";
+
+            enemy.style.top = "-40px";
+
+            game.appendChild(enemy);
+
+            enemies.push({
+                element: enemy,
+                y: -40
+            });
+        }
+
+        function collision(a, b) {
+
+            const rect1 = a.getBoundingClientRect();
+            const rect2 = b.getBoundingClientRect();
+
+            return !(
+                rect1.right < rect2.left ||
+                rect1.left > rect2.right ||
+                rect1.bottom < rect2.top ||
+                rect1.top > rect2.bottom
+            );
+        }
+
+        function gameLoop() {
+
+            if (!gameRunning) return;
+
+            // Player movement
+            if (keys["arrowleft"] || keys["a"]) {
+                playerX -= 6;
+            }
+
+            if (keys["arrowright"] || keys["d"]) {
+                playerX += 6;
+            }
+
+            playerX = Math.max(
+                0,
+                Math.min(game.clientWidth - 45, playerX)
+            );
+
+            player.style.left = playerX + "px";
+
+            // Move enemies
+            enemies.forEach((enemy, index) => {
+
+                enemy.y += 4;
+
+                enemy.element.style.top =
+                    enemy.y + "px";
+
+                if (collision(player, enemy.element)) {
+                    endGame();
+                }
+
+                if (enemy.y > game.clientHeight) {
+
+                    enemy.element.remove();
+
+                    enemies.splice(index, 1);
+
+                    score++;
+
+                    scoreText.textContent =
+                        "Score: " + score;
+                }
+            });
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+
+            gameRunning = false;
+
+            finalScore.textContent =
+                "Your score: " + score;
+
+            gameOverScreen.style.display = "flex";
+        }
+
+        function restartGame() {
+
+            enemies.forEach(enemy =>
+                enemy.element.remove()
+            );
+
+            enemies = [];
+
+            score = 0;
+
+            playerX = 177;
+
+            scoreText.textContent = "Score: 0";
+
+            gameOverScreen.style.display = "none";
+
+            gameRunning = true;
+
+            gameLoop();
+        }
+
+        setInterval(createEnemy, 900);
+
+        gameLoop();
+
+    </script>
+
+</body>
+</html>
